@@ -41,8 +41,10 @@ void gotoxy(int x,int y)
     fflush(stdout);
 }
 vector<string> trackers;
-
+map<string, pair<int,string>> files;
 map<string,string> hashoffile;
+string logfile;
+pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 vector<string> split(string phrase, string delimiter){
     vector<string> list;
     string s = string(phrase);
@@ -57,9 +59,10 @@ vector<string> split(string phrase, string delimiter){
     return list;
 }
 void senddata(string fs_name,int nsockfd){
+	freopen(logfile.c_str(),"a+",stderr);
 	//pthread_mutex_lock(&lock);
 	char sdbuf[LENGTH];
-	printf("[Server] Sending %s to the Client...\n", fs_name.c_str());
+	fprintf(stderr,"[Server] Sending %s to the Client...\n", fs_name.c_str());
 	FILE *fs = fopen(fs_name.c_str(), "r");
 	if(fs == NULL){
 	    fprintf(stderr, "ERROR: File %s not found on server. (errno = %d)\n", fs_name, errno);
@@ -78,14 +81,15 @@ void senddata(string fs_name,int nsockfd){
 		}
 		bzero(sdbuf, LENGTH);
 	}
-	printf("Ok sent to client!\n");
+	fprintf(stderr,"Ok sent to client!\n");
 	close(nsockfd);
-	printf("[Server] Connection with Client closed. Server will wait now...\n");
+	fprintf(stderr,"[Server] Connection with Client closed. Server will wait now...\n");
 	//pthread_mutex_unlock(&lock);
 	//pthread_exit(NULL);
 }
 
 void server(string ip){
+	freopen(logfile.c_str(),"a+",stderr);
 	int sockfd; 
 	int nsockfd; 
 	int num;
@@ -100,7 +104,7 @@ void server(string ip){
 		//exit(1);
 	}
 	else 
-		printf("[Server] Obtaining socket descriptor successfully.\n");
+		fprintf(stderr,"[Server] Obtaining socket descriptor successfully.\n");
 	addr_local.sin_family = AF_INET; 
 	addr_local.sin_port = htons(stoi(mysock[1])); 
 	addr_local.sin_addr.s_addr = INADDR_ANY; 
@@ -112,7 +116,7 @@ void server(string ip){
 		//exit(1);
 	}
 	else 
-		printf("[Server] Binded tcp port %d in addr 127.0.0.1 sucessfully.\n",PORT);
+		fprintf(stderr,"[Server] Binded tcp port %d in addr 127.0.0.1 sucessfully.\n",stoi(mysock[1]));
 
 	if(listen(sockfd,BACKLOG) == -1){
 		fprintf(stderr, "ERROR: Failed to listen Port. (errno = %d)\n", errno);
@@ -129,7 +133,7 @@ void server(string ip){
 			//exit(1);
 		}
 		else 
-			printf("[Server] Server has got connected from %s.\n", inet_ntoa(addr_remote.sin_addr));
+			fprintf(stderr,"[Server] Server has got connected from %s.\n", inet_ntoa(addr_remote.sin_addr));
 		string sock = "";
 		sock.append(inet_ntoa(addr_remote.sin_addr));
         sock.append(":");
@@ -151,6 +155,7 @@ void server(string ip){
 
 
 void getdatafromclient(string fr_name, string ip, string val){
+	freopen(logfile.c_str(),"a+",stderr);
 	int sockfd; 
 	int nsockfd;
 	char revbuf[LENGTH]; 
@@ -174,9 +179,9 @@ void getdatafromclient(string fr_name, string ip, string val){
 		//exit(1);
 	}
 	else 
-		printf("[Client] Connected to server at port %d...ok!\n", PORT);
+		fprintf(stderr,"[Client] Connected to server at port %d...ok!\n", stoi(sock[1]));
 
-	printf("[Client] Receiveing file from Server and saving it as final.txt...\n");
+	fprintf(stderr,"[Client] Receiveing file from Server and saving it as final.txt...\n");
 	cout<<val<<endl;
 	if(send(sockfd, val.c_str(), LENGTH, 0) < 0)
 	{
@@ -184,9 +189,10 @@ void getdatafromclient(string fr_name, string ip, string val){
 		//pthread_exit(NULL);
 		//exit(1);
 	}
+	vector<string> op=split(val,"$");
 	FILE *fr = fopen(fr_name.c_str(), "w");
 	if(fr == NULL)
-		printf("File %s Cannot be opened.\n", fr_name);
+		fprintf(stderr,"File %s Cannot be opened.\n", fr_name);
 	else
 	{
 		bzero(revbuf, LENGTH); 
@@ -196,15 +202,17 @@ void getdatafromclient(string fr_name, string ip, string val){
 	    {
 			//generatesha(revbuf);
 			int write_sz = fwrite(revbuf, sizeof(char), fr_block_sz, fr);
-		}    
-	    printf("Ok received from server!\n");
+		}   
+		files[op[1]] = {1,fr_name}; 
+	    fprintf(stderr,"Ok received from server!\n");
 	    fclose(fr);
 	}
 	close (sockfd);
-	printf("[Client] Connection lost.\n");
+	fprintf(stderr,"[Client] Connection lost.\n");
 	//pthread_exit(NULL);
  }
 void client(string fr_name, string ip, string val){
+	freopen(logfile.c_str(),"a+",stderr);
 	int sockfd; 
 	int nsockfd;
 	char revbuf[LENGTH]; 
@@ -230,9 +238,9 @@ void client(string fr_name, string ip, string val){
 		//exit(1);
 	}
 	else {
-		printf("[Client] Connected to server at port %d...ok!\n", PORT);
+		fprintf(stderr,"[Client] Connected to server at port %d...ok!\n", stoi(sock[1]));
 
-		printf("[Client] Receiveing file from Server and saving it as final.txt...\n");
+		fprintf(stderr,"[Client] Receiveing file from Server and saving it as final.txt...\n");
 		if(send(sockfd, val.c_str(), LENGTH, 0) < 0)
 		{
 			fprintf(stderr, "ERROR: Failed to send file %s. (errno = %d)\n",errno);
@@ -263,11 +271,13 @@ void client(string fr_name, string ip, string val){
 			}
 		close (sockfd);
 	}
-	printf("[Client] Connection lost.\n");
+	fprintf(stderr,"[Client] Connection lost.\n");
 	pthread_exit(NULL);
 }
 
 int main(int argc, char *argv[]){
+	logfile = argv[argc-1];
+   	freopen(logfile.c_str(),"a+",stderr);
     struct winsize w;
     ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
     int num_of_row = w.ws_row;
@@ -332,6 +342,7 @@ int main(int argc, char *argv[]){
 				str = str + f.clientsock;
 				//cout<<str<<endl;
 				hashoffile[f.hashstring]=command[1];
+				files[f.hashstring] = {1,f.filename};
 				/*for(int i=0;i<trackers.size();i++)
 					client("share",command[2],trackers[i], str);*/
 				for(int i=0;i<trackers.size();i++)
@@ -363,6 +374,7 @@ int main(int argc, char *argv[]){
 				str = str + "get";
 				str = str + "$";
 				str = str + f.hashstring;
+				files[f.hashstring] = {0,f.filename};
 				for(int i=0;i<trackers.size();i++){
 					//client("get", command[2], trackers[i],f.hashstring);
 					threads.push_back(std::thread(client, command[2], trackers[i],str));	
@@ -400,6 +412,7 @@ int main(int argc, char *argv[]){
 				str = str + clientip;
 				remove(command[1].c_str());
 				hashoffile.erase(f.hashstring.c_str());
+				files.erase(f.hashstring.c_str());
 				for(int i=0;i<trackers.size();i++){
 					//client("get", command[2], trackers[i],f.hashstring);
 					threads.push_back(std::thread(client, root, trackers[i],str));	
@@ -418,9 +431,19 @@ int main(int argc, char *argv[]){
 				break;
 			}
 			else if(command[0]=="show" && command[1]=="download"){
-
+				for(auto &it: files){
+					printf("\033[H\033[J");
+    				printf("\033[3J");
+					if(it.second.first==1)
+						cout<<"D	";
+					else
+						cout<<"S	";
+					cout<<it.second.second<<endl;
+				}
+				gotoxy(num_of_row,0);
 			}
 		}
 		for (auto& th : threads) th.join();
+		fclose(stderr);
     return 0;
 }
