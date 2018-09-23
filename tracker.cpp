@@ -201,18 +201,26 @@ void removedata(string str1, string str2){
 	}
 
 	ifstream fin;
-	fin.open("seederlist.txt");
-	ofstream temp;
-	temp.open("seederlist.txt");
+	fin.open("seederlist.txt",ios::in);
 	string line;
 	string deleteline = str1 + " ";
 	deleteline = deleteline + str2;
 	//cout<<deleteline<<endl;
+	vector<string> cntnt;
 	while (getline(fin,line))
 	{
-    	if(line!=deleteline)
-    	temp << line << endl;
+    	if(line==deleteline)
+			continue;
+		//cout<<line<<endl;
+		cntnt.push_back(line);
 	}
+	fin.close();
+	ofstream fo;
+	fo.open("seederlist.txt",ios::out);
+	for(int i=0;i<cntnt.size();i++){
+		fo<<cntnt[i]<<endl;
+	}
+	fo.close();
 	//cout<<v.size()<<endl;
 	//for(int i=0;i<v.size();i++){
 	//	cout<<v[i].filename<<endl;
@@ -230,18 +238,26 @@ void removepeer(string str){
 	}
 
 	ifstream fin;
-	fin.open("seederlist.txt");
-	ofstream temp;
-	temp.open("seederlist.txt");
+	fin.open("seederlist.txt",ios::in);
 	string line;
 	string deleteline = str;
 	//cout<<deleteline<<endl;
+	vector<string> cntnt;
 	while (getline(fin,line))
 	{
-		vector<string> op = split(line," ");
+    	vector<string> op = split(line," ");
     	if(op[1]!=deleteline)
-    		temp << line << endl;
+			continue;
+		//cout<<line<<endl;
+		cntnt.push_back(line);
 	}
+	fin.close();
+	ofstream fo;
+	fo.open("seederlist.txt",ios::out);
+	for(int i=0;i<cntnt.size();i++){
+		fo<<cntnt[i]<<endl;
+	}
+	fo.close();
 	/*cout<<v.size()<<endl;
 	for(int i=0;i<v.size();i++){
 		cout<<v[i].filename<<endl;
@@ -371,9 +387,10 @@ void recievefileinfofrompeer(int sockfd){
 	vector<string> data = split(str,"#");
 	int i = stoi(data[0]);
 	ofstream fp ("seederlist.txt",ios::app | ios::out);
-	while(i--){
-		vector<string> ni = split(data[i-1],"$");
-		//cout<<ni.size()<<endl;
+	int j=0;
+	while(j<i){
+		vector<string> ni = split(data[j+1],"$");
+		cout<<data[j+1]<<endl;
 		f.filename = ni[0];
 		f.filesize = ni[1];
 		f.hashstring = ni[2];
@@ -385,6 +402,7 @@ void recievefileinfofrompeer(int sockfd){
 			fp<<f.clientsock;
 			fp<<endl;
 		}
+		j++;
 	}  
 	fp.close();
 	

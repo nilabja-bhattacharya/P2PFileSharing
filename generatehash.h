@@ -7,5 +7,5 @@
 #include <bits/stdc++.h>
 #include <unistd.h>
 #include <openssl/sha.h>
-void createmtorrent(const char *filename, const char *mfilename);
+void createmtorrent(vector<string> trackers,const char *filename, const char *mfilename);
 #endif

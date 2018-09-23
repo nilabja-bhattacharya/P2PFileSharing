@@ -203,7 +203,7 @@ void getdatafromclient(string fr_name, string ip, string val){
 			//generatesha(revbuf);
 			int write_sz = fwrite(revbuf, sizeof(char), fr_block_sz, fr);
 		}   
-		files[op[1]] = {1,fr_name}; 
+		files[op[1]] = make_pair(1,fr_name); 
 	    fprintf(stderr,"Ok received from server!\n");
 	    fclose(fr);
 	}
@@ -290,6 +290,8 @@ int main(int argc, char *argv[]){
     strcat(root,"/");
 	string clientip = argv[1];
 	std::vector<std::thread> threads;
+	for(int i=2;i<argc-1;i++)
+			trackers.push_back(argv[i]);
 	thread t1(server,clientip);
 	t1.detach();
 		while(1){
@@ -298,8 +300,6 @@ int main(int argc, char *argv[]){
     		gotoxy(num_of_row,0);
 			string str;
 			getline(cin,str);
-			for(int i=2;i<argc-1;i++)
-				trackers.push_back(argv[i]);
 			vector<string> command = split(str," ");
 			/*for(int i=0;i<command.size();i++){
 				cout<<command[i]<<endl;
@@ -307,15 +307,15 @@ int main(int argc, char *argv[]){
 			
 			if(command[0]=="share"){
 				if(command[1][0]=='/'){
-					createmtorrent(command[1].c_str(), command[2].c_str());
+					createmtorrent(trackers,command[1].c_str(), command[2].c_str());
 				}
 				else if(command[1][0]=='~'){
 					command[1] = root + command[1].substr(2);
-					createmtorrent(command[1].c_str(), command[2].c_str());
+					createmtorrent(trackers,command[1].c_str(), command[2].c_str());
 				}
 				else{
 					command[1] = root + command[1];
-					createmtorrent(command[1].c_str(), command[2].c_str());;
+					createmtorrent(trackers,command[1].c_str(), command[2].c_str());;
 				}
 				ifstream fp (command[2],ios::out);
 				struct fileinfo f;
@@ -431,16 +431,16 @@ int main(int argc, char *argv[]){
 				break;
 			}
 			else if(command[0]=="show" && command[1]=="download"){
+				printf("\033[H\033[J");
+    			printf("\033[3J");
 				for(auto it = files.begin(); it != files.end(); ++it){
-					//printf("\033[H\033[J");
-    				//printf("\033[3J");
 					if(it->second.first==1)
 						cout<<"D	";
 					else
 						cout<<"S	";
 					cout<<it->second.second<<endl;
-					//sleep(5);
 				}
+				sleep(5);
 				gotoxy(num_of_row,0);
 			}
 		}
