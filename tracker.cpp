@@ -56,7 +56,7 @@ void senddata(string fs_name,int nsockfd){
 	char sdbuf[LENGTH];
 	bzero(sdbuf, LENGTH); 
 	int fs_block_sz; 
-	printf("[Server] Sending %s to the Client...\n", fs_name);
+	fprintf(stderr,"[Server] Sending %s to the Client...\n", fs_name);
 	ifstream fp (seederlist.c_str());
 	if(fp.fail()){
 	    fprintf(stderr, "ERROR: File %s not found on server. (errno = %d)\n", fs_name.c_str(), errno);
@@ -74,7 +74,7 @@ void senddata(string fs_name,int nsockfd){
 			}
 		}
 	}
-	cout<<ips<<endl;
+	//cout<<ips<<endl;
 	if(send(nsockfd, ips.c_str(), LENGTH, 0) < 0)
 	{
 		fprintf(stderr, "ERROR: Failed to send file %s. (errno = %d)\n", fs_name.c_str(), errno);
@@ -160,18 +160,12 @@ void senddata(string fs_name,int nsockfd){
 void senddatatotracker(int nsockfd){
 	freopen(logfile.c_str(),"a+",stderr);
 	//pthread_mutex_lock(&lock);
-	fprintf(stderr,"[Tracker 1] Sending data to the another tracker...\n");
-	int i=0; 
-	if(send(nsockfd, to_string(v.size()).c_str(), sizeof(to_string(v.size()).c_str()), 0) < 0)
-	{	
-		cout<<v.size()<<endl;
-		fprintf(stderr, "ERROR: Failed to send file %s. (errno = %d)\n",errno);
-		pthread_exit(NULL);
-		exit(1);
-	}
-	//cout<<v.size()<<endl;
+	fprintf(stderr,"[Tracker] Sending data to the another tracker...\n");
+	string str;
+	int i=0;
+	str = to_string(v.size());
+	str = str + "#";
 	while(i<v.size()){
-		string str="";
 			str = str + v[i].filename;
 			str = str + "$";
 			str = str + v[i].filesize;
@@ -179,15 +173,16 @@ void senddatatotracker(int nsockfd){
 			str = str + v[i].hashstring;
 			str = str + "$";
 			str = str + v[i].clientsock;
-		if(send(nsockfd, str.c_str(), LENGTH, 0) < 0)
+			str = str+"#";
+		i++;
+	}
+	if(send(nsockfd, str.c_str(), LENGTH, 0) < 0)
 		{
 			//cout<<v[i].filename<<endl;
 		    fprintf(stderr, "ERROR: Failed to send file %s. (errno = %d)\n",errno);
 			pthread_exit(NULL);
 		    exit(1);
 		}
-		i++;
-	}
 	fprintf(stderr,"Ok sent to client!\n");
 	close(nsockfd);
 	fprintf(stderr,"[Server] Connection with Client closed. Server will wait now...\n");
@@ -218,10 +213,10 @@ void removedata(string str1, string str2){
     	if(line!=deleteline)
     	temp << line << endl;
 	}
-	/*cout<<v.size()<<endl;
-	for(int i=0;i<v.size();i++){
-		cout<<v[i].filename<<endl;
-	}*/
+	//cout<<v.size()<<endl;
+	//for(int i=0;i<v.size();i++){
+	//	cout<<v[i].filename<<endl;
+//	}
 }
 
 void removepeer(string str){
@@ -270,7 +265,7 @@ void connecttootherserver(string ip){
 		//exit(1);
 	}
 	else 
-		fprintf(stderr,"[Tracker 1] Obtaining socket descriptor successfully.\n");
+		fprintf(stderr,"[Tracker] Obtaining socket descriptor successfully.\n");
 	addr_local.sin_family = AF_INET; 
 	addr_local.sin_port = htons(stoi(mysock[1])); 
 	addr_local.sin_addr.s_addr = INADDR_ANY; 
@@ -282,7 +277,7 @@ void connecttootherserver(string ip){
 		//exit(1);
 	}
 	else 
-		fprintf(stderr,"[Tracker 1] Binded tcp port %d in addr 127.0.0.1 sucessfully.\n",stoi(mysock[1]));
+		fprintf(stderr,"[Tracker] Binded tcp port %d in addr 127.0.0.1 sucessfully.\n",stoi(mysock[1]));
 
 	if(listen(sockfd,BACKLOG) == -1){
 		fprintf(stderr, "ERROR: Failed to listen Port. (errno = %d)\n", errno);
@@ -290,7 +285,7 @@ void connecttootherserver(string ip){
 		//exit(1);
 	}
 	else
-		fprintf (stderr,"[Tracker 1] Listening the port %d successfully.\n", stoi(mysock[1]));
+		fprintf (stderr,"[Tracker] Listening the port %d successfully.\n", stoi(mysock[1]));
 
 	int success = 0;
 	std::vector<std::thread> threads;
@@ -302,18 +297,18 @@ void connecttootherserver(string ip){
 			//exit(1);
 		}
 		else 
-			fprintf(stderr,"[Tracker 1] Server has got connected from %s.\n", inet_ntoa(addr_remote.sin_addr));
-		string sock = "";
+			fprintf(stderr,"[Tracker] Server has got connected from %s.\n", inet_ntoa(addr_remote.sin_addr));
+		/*string sock = "";
 		sock.append(inet_ntoa(addr_remote.sin_addr));
         sock.append(":");
 		sock.append(to_string(ntohs(addr_remote.sin_port)));
-		printf("%s",sock.c_str());
+		printf("%s",sock.c_str());*/
         //char buf[LENGTH];
         //read(nsockfd,buf,LENGTH);
         //cout<<buf<<endl;
 		//string fs_name = "f5.png";
 		recv(nsockfd, revbuf, LENGTH, 0);
-		cout<<revbuf<<endl;
+		//cout<<revbuf<<endl;
 		string str = revbuf;
 		vector<string> opr = split(str,"$");
 		if(strcmp(opr[0].c_str(),"tracker")==0){
@@ -367,25 +362,17 @@ void recievefileinfofrompeer(int sockfd){
 	bzero(revbuf, LENGTH); 
 	int fr_block_sz = 0;
 	struct fileinfo f;
-	int i=1;
-	//cout<<1234<<endl;
-		if(send(sockfd,"tracker",(int)10,0)>0){
-			//cout<<"hi"<<endl;
-		}
-		if((fr_block_sz = recv(sockfd, revbuf, LENGTH, 0)) > 0){
-			i  = atoi(revbuf);
-			//cout<<revbuf<<endl;
-			bzero(revbuf, LENGTH); 
-		}
-	ofstream fp ("seederlist.txt",ios::app | ios::out);
-	while(i--){
-		string str="";
-		if((fr_block_sz = recv(sockfd, revbuf, LENGTH, 0)) > 0){
+	string str;
+	if((fr_block_sz = recv(sockfd, revbuf, LENGTH, 0)) > 0){
 			//cout<<revbuf<<endl;
 			str = revbuf;
 			bzero(revbuf, LENGTH); 
-		}
-		vector<string> ni = split(str,"$");
+	}
+	vector<string> data = split(str,"#");
+	int i = stoi(data[0]);
+	ofstream fp ("seederlist.txt",ios::app | ios::out);
+	while(i--){
+		vector<string> ni = split(data[i-1],"$");
 		//cout<<ni.size()<<endl;
 		f.filename = ni[0];
 		f.filesize = ni[1];

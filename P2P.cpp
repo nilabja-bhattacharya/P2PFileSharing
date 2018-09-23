@@ -134,18 +134,18 @@ void server(string ip){
 		}
 		else 
 			fprintf(stderr,"[Server] Server has got connected from %s.\n", inet_ntoa(addr_remote.sin_addr));
-		string sock = "";
+		/*string sock = "";
 		sock.append(inet_ntoa(addr_remote.sin_addr));
         sock.append(":");
 		sock.append(to_string(ntohs(addr_remote.sin_port)));
-		printf("%s",sock.c_str());
+		printf("%s",sock.c_str());*/
 		bzero(revbuf,LENGTH);
 		if(recv(nsockfd, revbuf, LENGTH, 0)>0){
-			cout<<revbuf<<endl;
+			//cout<<revbuf<<endl;
 			vector<string> hash = split(revbuf,"$");
-			cout<<hash[1]<<endl;
+			//cout<<hash[1]<<endl;
 			string fs_name = hashoffile[hash[1]];
-			cout<<fs_name<<endl;
+			//cout<<fs_name<<endl;
 			threads.push_back(std::thread(senddata, fs_name,nsockfd));
 		}
 		success = 0;
@@ -161,7 +161,7 @@ void getdatafromclient(string fr_name, string ip, string val){
 	char revbuf[LENGTH]; 
 	struct sockaddr_in remote_addr;
 	vector<string> sock = split(ip,":");
-	cout<<ip<<endl;
+	//cout<<ip<<endl;
 	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 	{
 		fprintf(stderr, "ERROR: Failed to obtain Socket Descriptor! (errno = %d)\n",errno);
@@ -182,7 +182,7 @@ void getdatafromclient(string fr_name, string ip, string val){
 		fprintf(stderr,"[Client] Connected to server at port %d...ok!\n", stoi(sock[1]));
 
 	fprintf(stderr,"[Client] Receiveing file from Server and saving it as final.txt...\n");
-	cout<<val<<endl;
+	//cout<<val<<endl;
 	if(send(sockfd, val.c_str(), LENGTH, 0) < 0)
 	{
 		fprintf(stderr, "ERROR: Failed to send file %s. (errno = %d)\n",errno);
@@ -342,7 +342,7 @@ int main(int argc, char *argv[]){
 				str = str + f.clientsock;
 				//cout<<str<<endl;
 				hashoffile[f.hashstring]=command[1];
-				files[f.hashstring] = {1,f.filename};
+				files[f.hashstring] = make_pair(1,f.filename);
 				/*for(int i=0;i<trackers.size();i++)
 					client("share",command[2],trackers[i], str);*/
 				for(int i=0;i<trackers.size();i++)
@@ -374,7 +374,7 @@ int main(int argc, char *argv[]){
 				str = str + "get";
 				str = str + "$";
 				str = str + f.hashstring;
-				files[f.hashstring] = {0,f.filename};
+				files[f.hashstring] = make_pair(0,f.filename);
 				for(int i=0;i<trackers.size();i++){
 					//client("get", command[2], trackers[i],f.hashstring);
 					threads.push_back(std::thread(client, command[2], trackers[i],str));	
@@ -431,14 +431,15 @@ int main(int argc, char *argv[]){
 				break;
 			}
 			else if(command[0]=="show" && command[1]=="download"){
-				for(auto &it: files){
-					printf("\033[H\033[J");
-    				printf("\033[3J");
-					if(it.second.first==1)
+				for(auto it = files.begin(); it != files.end(); ++it){
+					//printf("\033[H\033[J");
+    				//printf("\033[3J");
+					if(it->second.first==1)
 						cout<<"D	";
 					else
 						cout<<"S	";
-					cout<<it.second.second<<endl;
+					cout<<it->second.second<<endl;
+					//sleep(5);
 				}
 				gotoxy(num_of_row,0);
 			}

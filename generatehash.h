@@ -7,6 +7,5 @@
 #include <bits/stdc++.h>
 #include <unistd.h>
 #include <openssl/sha.h>
-bool generatesha(char *input);
 void createmtorrent(const char *filename, const char *mfilename);
 #endif
