@@ -15,7 +15,7 @@
 #include <iostream>
 #include <bits/stdc++.h>
 using namespace std;
-#define PORT 22000
+#define PORT 21000
 #define LENGTH 512
 
 void error(const char *msg)
@@ -70,7 +70,7 @@ void connection(string fr_name){
 	pthread_exit(NULL);
 }
 
-int main(){
+int client(){
 	string fr_name="f1";
 	std::vector<std::thread> threads;
     for(int i=0;i<5;i++) {

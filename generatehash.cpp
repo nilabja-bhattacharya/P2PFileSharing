@@ -24,15 +24,12 @@ bool generatesha(char* input){
     return true;
 }
 
-void createmtorrent(char *filename){
+void createmtorrent(const char *filename,const  char *mfilename){
     //cout<<"hi"<<endl;
-    char mname[100];
-    strcpy(mname,filename);
-    strcat(mname,".mtorrent");
     //cout<<mname<<endl;
-    FILE *mt = fopen(mname,"w+");
     FILE *fl = fopen(filename,"rb");
-    fprintf(mt,"%s\n",filename);
+	ofstream tmp;
+	tmp.open(mfilename,ios::out);
     char buffer[BUFFERLENGTH];
     size_t res;
     int totalsize=0;
@@ -46,12 +43,10 @@ void createmtorrent(char *filename){
         totalsize+=res;
         //cout<<res<<endl;
     }
-    fprintf(mt,"%d\n", totalsize);
-    fprintf(mt,"%s",str.c_str());
+    tmp<<filename<<endl;
+    tmp<<totalsize<<endl;
+    tmp<<str.c_str()<<endl;
+    tmp.close();
+    fclose(fl);
     //cout<<str<<endl;
-}
-
-int main(){
-    createmtorrent("f5.png");
-    return 0;
 }

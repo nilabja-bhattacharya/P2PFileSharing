@@ -17,14 +17,14 @@
 #include <iostream>
 using namespace std;
 
-#define PORT 20000 
+#define PORT 22000 
 #define BACKLOG 5
 #define LENGTH 512
 
-void error(const char *msg){
+/*void error(const char *msg){
 	perror(msg);
 	exit(1);
-}
+}*/
 //pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 void senddata(string fs_name,int nsockfd){
 	//pthread_mutex_lock(&lock);
@@ -55,13 +55,13 @@ void senddata(string fs_name,int nsockfd){
 	pthread_exit(NULL);
 }
 
-void connection(string fs_name){
+void connection1(){
 	int sockfd; 
 	int nsockfd; 
 	int num;
 	int sin_size; 
 	struct sockaddr_in addr_local; 
-	struct sockaddr_in addr_remote; 
+	struct sockaddr_in addr_remote, remote_addr; 
 	char revbuf[LENGTH]; 
 
 	if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1 ){
@@ -76,7 +76,7 @@ void connection(string fs_name){
 	addr_local.sin_addr.s_addr = INADDR_ANY; 
 	bzero(&(addr_local.sin_zero), 8); 
 
-	if( bind(sockfd, (struct sockaddr*)&addr_local, sizeof(struct sockaddr)) == -1 ){
+	/*if( bind(sockfd, (struct sockaddr*)&addr_local, sizeof(struct sockaddr)) == -1 ){
 		fprintf(stderr, "ERROR: Failed to bind Port. (errno = %d)\n", errno);
 		pthread_exit(NULL);
 		//exit(1);
@@ -86,6 +86,12 @@ void connection(string fs_name){
 
 	if(listen(sockfd,BACKLOG) == -1){
 		fprintf(stderr, "ERROR: Failed to listen Port. (errno = %d)\n", errno);
+		pthread_exit(NULL);
+		//exit(1);
+	}*/
+	if (connect(sockfd, (struct sockaddr *)&remote_addr, sizeof(struct sockaddr)) == -1)
+	{
+		fprintf(stderr, "ERROR: Failed to connect to the host! (errno = %d)\n",errno);
 		pthread_exit(NULL);
 		//exit(1);
 	}
@@ -103,13 +109,23 @@ void connection(string fs_name){
 		}
 		else 
 			printf("[Server] Server has got connected from %s.\n", inet_ntoa(addr_remote.sin_addr));
-            threads.push_back(std::thread(senddata, fs_name,nsockfd));
-		    success = 0;
+		/*string sock = "";
+		sock.append(inet_ntoa(addr_remote.sin_addr));
+        sock.append(":");
+		sock.append(to_string(ntohs(addr_remote.sin_port)));
+		printf("%s",sock.c_str());*/
+		string fs_name = "f5.png";
+        threads.push_back(std::thread(senddata, fs_name,nsockfd));
+		success = 0;
 	}
 	for (auto& th : threads) th.join();  
 }
 
-int main(int argc, char *argv){
-	connection("f5.png");
+int servercon(){
+	connection1();
+	return 1;
+}
+int main(){
+	servercon();
 	return 0;
 }
